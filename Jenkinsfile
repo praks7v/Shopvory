@@ -1,20 +1,58 @@
 pipeline {
     agent any
 
+    environment {
+        PROJECT_ID = 'praks-dev'
+        CLUSTER_NAME = 'prod-cluster'
+        CLUSTER_ZONE = 'asia-south1-b'
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('jenkins-sa-key')  // Service account key file
+        KUBE_CONFIG = 'kubeconfig'
+    }
+
     stages {
-        stage('Deploy To Kubernetes') {
+        stage('Authenticate with GCP') {
             steps {
-                withKubeCredentials(kubectlCredentials: [[caCertificate: '', clusterName: 'EKS-1', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', serverUrl: 'https://9F39F577334FF23706994135261985F2.gr7.ap-south-1.eks.amazonaws.com']]) {
-                    sh "kubectl apply -f deployment-service.yml"
-                    
+                script {
+                    // Authenticate with Google Cloud
+                    sh 'gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}'
                 }
             }
         }
-        
-        stage('verify Deployment') {
+
+        stage('Get GKE Credentials') {
             steps {
-                withKubeCredentials(kubectlCredentials: [[caCertificate: '', clusterName: 'EKS-1', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', serverUrl: 'https://9F39F577334FF23706994135261985F2.gr7.ap-south-1.eks.amazonaws.com']]) {
-                    sh "kubectl get svc -n webapps"
+                script {
+                    // Fetch credentials to interact with GKE cluster
+                    sh '''
+                    gcloud container clusters get-credentials ${CLUSTER_NAME} \
+                      --zone ${CLUSTER_ZONE} \
+                      --project ${PROJECT_ID}
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to GKE') {
+            steps {
+                script {
+                                                   
+                    // Deploy Kubernetes manifests using kubectl
+                    sh '''
+                    kubectl apply -f deployment-service.yml --namespace=webapps
+                    sleep 60
+                    '''
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                script {
+                    // Verify that the deployment is successful
+                    sh '''
+                    kubectl get pods --namespace=webapps
+                    kubectl get svc --namespace=webapps
+                    '''
                 }
             }
         }
