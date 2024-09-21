@@ -39,7 +39,7 @@ pipeline {
                                                    
                     // Deploy Kubernetes manifests using kubectl
                     sh '''
-                    kubectl apply -f deployment-service.yml --namespace=webapps
+                    kubectl apply -f deployment-service.yml
                     sleep 60
                     '''
                 }
@@ -51,8 +51,8 @@ pipeline {
                 script {
                     // Verify that the deployment is successful
                     sh '''
-                    kubectl get pods --namespace=webapps
-                    kubectl get svc --namespace=webapps
+                    kubectl get pods
+                    kubectl get svc
                     '''
                 }
             }
