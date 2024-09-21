@@ -7,6 +7,7 @@ pipeline {
         CLUSTER_ZONE = 'asia-south1-b'
         GOOGLE_APPLICATION_CREDENTIALS = credentials('jenkins-sa-key')  // Service account key file
         KUBE_CONFIG = 'kubeconfig'
+        USE_GKE_GCLOUD_AUTH_PLUGIN = 'True'  // Set the environment variable for kubectl
     }
 
     stages {
