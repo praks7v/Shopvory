@@ -1,0 +1,63 @@
+---
+- name: Install Java
+  apt:
+    name: "{{ java_version }}"
+    state: present
+
+- name: Install dependencies for Trivy repository
+  apt:
+    name: "{{ apt_deps }}"
+    state: present
+
+- name: Add Trivy repository key
+  apt_key:
+    url: https://aquasecurity.github.io/trivy-repo/deb/public.key
+    state: present
+
+- name: Add Trivy repository source
+  lineinfile:
+    path: /etc/apt/sources.list.d/trivy.list
+    line: "deb https://aquasecurity.github.io/trivy-repo/deb {{ ansible_distribution_release }} main"
+    create: yes
+
+- name: Update apt cache manually
+  apt:
+    update_cache: yes
+
+- name: Install Trivy
+  apt:
+    name: trivy
+    state: present
+  
+- name: Download Jenkins GPG key
+  ansible.builtin.get_url:
+    url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+    dest: /usr/share/keyrings/jenkins-keyring.asc
+    mode: '0644'
+  notify: Update apt cache
+
+- name: Add Jenkins apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+    state: present
+    filename: 'jenkins'
+  notify: Update apt cache
+
+- name: Install Jenkins
+  apt:
+    name: jenkins
+    state: present
+
+- name: Check Jenkins service status
+  ansible.builtin.systemd:
+    name: jenkins
+    state: started
+
+- name: Get Jenkins initial admin password
+  ansible.builtin.command: cat /var/lib/jenkins/secrets/initialAdminPassword
+  register: jenkins_admin_password
+  ignore_errors: yes
+
+- name: Display the Jenkins initial admin password
+  ansible.builtin.debug:
+    msg: "{{ jenkins_admin_password.stdout }}"

@@ -1,0 +1,3 @@
+# remove json hosts lists file
+ansible_inventory.json
+terraform_output.json

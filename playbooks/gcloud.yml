@@ -1,0 +1,36 @@
+---
+- name: Install gcloud and kubectl
+  hosts: jenkins-vm
+  become: true
+  tasks:
+    - name: Ensure snapd is installed
+      apt:
+        name: snapd
+        state: present
+      tags: snap
+
+    - name: Ensure the snapd service is started and enabled
+      systemd:
+        name: snapd
+        state: started
+        enabled: yes
+      tags: snap
+
+    - name: Install Google Cloud SDK using snap with classic confinement
+      snap:
+        name: google-cloud-cli
+        state: present
+        classic: true
+      tags: gcloud
+
+    - name: Ensure snap packages are up to date (Optional)
+      command: snap refresh
+      tags: snap
+
+    - name: Install gke-gcloud-auth-plugin
+      shell: gcloud components install gke-gcloud-auth-plugin --quiet
+      tags: gcloud
+
+    - name: Install kubectl using gcloud
+      shell: gcloud components install kubectl --quiet
+      tags: kubectl

@@ -1,0 +1,7 @@
+---
+java_version: "openjdk-17-jre-headless"
+apt_deps:
+  - wget
+  - apt-transport-https
+  - gnupg
+  - lsb-release
