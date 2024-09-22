@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        PROJECT_ID = 'praks-dev'
+        PROJECT_ID = 'shopvory-ecommerce'
         CLUSTER_NAME = 'prod-cluster'
         CLUSTER_ZONE = 'asia-south1-b'
         GOOGLE_APPLICATION_CREDENTIALS = credentials('jenkins-sa-key')  // Service account key file
