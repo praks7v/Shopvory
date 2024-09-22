@@ -53,7 +53,7 @@ The application consists of the following services:
 - **GitHub**: Version control with webhooks for triggering builds
 - **GitHub Webhooks**: For automated deployment triggers
   
-## Infrastructure Setup
+## [Infrastructure Setup](https://github.com/praks7v/Shopvory/tree/gcp-infra)
 We use **Terraform** to provision the following GCP resources:
 
 - VPC network for communication between services
