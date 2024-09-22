@@ -1,0 +1,49 @@
+---
+- name: Install Packegaes and configure vm
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure all hosts are reachable
+      ping:
+
+    - name: Ensure the system is up-to-date
+      apt:
+        update_cache: yes
+        name: "*"
+        state: latest
+
+- name: Install Jenkins and dependencies
+  hosts: jenkins-vm
+  gather_facts: yes
+  become: yes
+
+  roles:
+    - jenkins
+    - docker
+
+  tasks:
+    - name: Add Jenkins user to docker group
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+
+    - name: Set permissions on Docker socket
+      file:
+        path: /var/run/docker.sock
+        owner: root
+        group: docker
+        mode: "0660"
+
+    - name: Restart Jenkins service
+      systemd:
+        name: jenkins
+        state: restarted
+
+    - name: Restart Docker service
+      systemd:
+        name: docker
+        state: restarted
+
+- import_playbook: gcloud.yml
+- import_playbook: kubectl.yml

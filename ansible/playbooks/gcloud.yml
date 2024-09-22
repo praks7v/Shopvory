@@ -1,0 +1,44 @@
+---
+- name: Install Google Cloud SDK and GKE gcloud auth plugin
+  hosts: jenkins-vm
+  become: true
+  tasks:
+    - name: Update apt package index
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - curl
+        state: present
+
+    - name: Download Google Cloud GPG key and save it to /usr/share/keyrings
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+        keyring: /usr/share/keyrings/cloud.google.gpg
+
+    - name: Add Google Cloud SDK repository
+      lineinfile:
+        path: /etc/apt/sources.list.d/google-cloud-sdk.list
+        line: "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main"
+        create: yes
+        state: present
+
+    - name: Update apt package index again
+      apt:
+        update_cache: yes
+
+    - name: Install Google Cloud CLI
+      apt:
+        name: google-cloud-cli
+        state: present
+
+    - name: Install GKE gcloud auth plugin
+      apt:
+        name: google-cloud-sdk-gke-gcloud-auth-plugin
+        state: present
