@@ -4,7 +4,7 @@
 echo "Starting Terraform cicd deployment..."
 
 # Run Terraform to create infrastructure
-cd ../environments/cicd
+cd ../terraform/environments/cicd
 echo "Initializing Terraform..."
 terraform init
 

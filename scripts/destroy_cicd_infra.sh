@@ -4,7 +4,7 @@
 echo "Starting Terraform CICD destroy process..."
 
 # Run Terraform to destroy infrastructure
-cd ../environments/cicd
+cd ../terraform/environments/cicd
 echo "Initializing Terraform for destruction..."
 terraform init
 

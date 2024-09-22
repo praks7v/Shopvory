@@ -8,7 +8,7 @@ run_terraform() {
     local env=$1
     echo "Starting Terraform for environment: $env"
     
-    cd "../environments/$env" || exit 1
+    cd "../terraform/environments/$env" || exit 1
     
     # Initialize Terraform
     terraform init

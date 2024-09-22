@@ -20,6 +20,7 @@ step 01:
 step 02: Terraform & ansible 
     - install terraform (./scripts/install_terraform.sh)
     - ssh-keygen -t ed25519 -f ~/.ssh/ansible_ed25519 -C ansible (ansible)
+    - cd scripts 
     - chmod +x create_cicd_infra.sh
     - ./create_cicd_infra.sh
     - ./create_gke_infra.sh &
@@ -45,8 +46,9 @@ step 03: Jenkins
     - run form webhook
     
 step 04: destroy
-    - ./scripts/destroy_cicd.sh
-    - ./scripts/destroy_gke_infra.sh
+    - cd scripts
+    - ./destroy_cicd.sh
+    - ./destroy_gke_infra.sh
     - gcloud storage rm -r gs://tf-state-file-cicd && gcloud storage buckets delete gs://tf-state-file-cicd
 
     - gcloud projects delete <PROJECT_ID>
