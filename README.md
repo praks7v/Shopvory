@@ -211,6 +211,63 @@ Install the following Jenkins plugins:
 - **Jenkins service account JSON key**: Add the GCP service account key to interact with GCP resources.
 - **GitHub credentials**: Store GitHub credentials for source control access.
 - **SonarQube credentials**: Add credentials to allow Jenkins to communicate with SonarQube.
+  
+### Steps to Create and Add Google Cloud Service Account Key to Jenkins:
+1. Create the Service Account Key
+Run the following command to generate a key for the Jenkins service account. This key will be used for authentication with GCP in the Jenkins pipeline.
+
+```bash
+gcloud iam service-accounts keys create ~/jenkins-sa-key.json \
+--iam-account=jenkins-sa@<PROJECT_ID>.iam.gserviceaccount.com
+```
+Replace `<PROJECT_ID>` with your actual GCP project ID.
+
+2. Add the Key to Jenkins
+
+- Open your Jenkins dashboard.
+- Go to Manage Jenkins > Manage Credentials > (global).
+- Click on Add Credentials.
+- Select Secret file as the kind.
+- Upload the `jenkins-sa-key.json` file generated in step 1.
+- Set the ID to something descriptive, like `jenkins-sa-key`.
+  
+3. Use the Credentials in Jenkins Pipelines
+In your Jenkinsfile, you can now reference the credentials using the ID you set when adding them to Jenkins.
+
+**Example Jenkinsfile with Environment Variables**
+The following environment variables are used to configure the deployment pipeline:
+
+```groovy
+pipeline {
+    agent any
+    environment {
+        PROJECT_ID = 'shopvory-ecommerce'  // GCP Project ID
+        CLUSTER_NAME = 'prod-cluster'  // GKE Cluster name
+        CLUSTER_ZONE = 'asia-south1-b'  // GKE Cluster zone
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('jenkins-sa-key')  // Service account key file stored in Jenkins
+        KUBE_CONFIG = 'kubeconfig'  // Kubernetes config file
+        USE_GKE_GCLOUD_AUTH_PLUGIN = 'True'  // Required for GKE authentication via gcloud plugin
+    }
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    sh 'gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS'
+                    sh 'gcloud container clusters get-credentials $CLUSTER_NAME --zone $CLUSTER_ZONE --project $PROJECT_ID'
+                    sh 'kubectl apply -f deployment-service.yml'
+                }
+            }
+        }
+    }
+}
+```
+### Environment Variable Descriptions:
+- `PROJECT_ID`: The Google Cloud Project ID where your resources are hosted.
+- `CLUSTER_NAME`: The name of the Google Kubernetes Engine (GKE) cluster where the application will be deployed.
+- `CLUSTER_ZONE`: The zone where your GKE cluster is located. Example: `asia-south1-b`.
+- `GOOGLE_APPLICATION_CREDENTIALS`: The service account key stored in Jenkins for authenticating with GCP. This uses the credential ID added in Jenkins.
+- `KUBE_CONFIG`: The Kubernetes config file that `kubectl` uses to interact with the GKE cluster.
+- `USE_GKE_GCLOUD_AUTH_PLUGIN`: This ensures that `kubectl` uses the GKE gcloud authentication plugin when accessing the cluster.
 - 
 ### Create a Pipeline in Jenkins
 1. In Jenkins, click New Item.
