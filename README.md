@@ -4,36 +4,36 @@ Shopvory is a microservice-based ecommerce platform. Each service is designed to
 ## Table of Contents
 1. Microservice Components
 2. Tech Stack
-3. Infrastructure Setup
+3. [Infrastructure Setup](https://github.com/praks7v/Shopvory/tree/gcp-infra)
 4. CI/CD Pipeline
-5. Deployment
+5. [Deployment](https://github.com/praks7v/Shopvory/tree/gcp-infra/scripts)
 6. Testing
 7. Contributing
    
 ## Microservice Components
 The application consists of the following services:
 
-- adservice
+- [adservice](https://github.com/praks7v/Shopvory/tree/adservice)
   - Ad management and delivery.
-- cartservice
+- [cartservice](https://github.com/praks7v/Shopvory/tree/cartservice)
   - Handles shopping cart operations.
-- checkoutservice
+- [checkoutservice](https://github.com/praks7v/Shopvory/tree/checkoutservice)
   - Manages the checkout process.
-- currencyservice
+- [currencyservice](https://github.com/praks7v/Shopvory/tree/currencyservice)
   - Currency conversion service.
-- emailservice
+- [emailservice](https://github.com/praks7v/Shopvory/tree/emailservice)
   - Handles email notifications.
-- frontend
+- [frontend](https://github.com/praks7v/Shopvory/tree/frontend)
   - User-facing frontend service.
-- loadgenerator
+- [loadgenerator](https://github.com/praks7v/Shopvory/tree/loadgenerator)
   - Simulates user traffic for load testing.
-- paymentservice
+- [paymentservice](https://github.com/praks7v/Shopvory/tree/paymentservice)
   - Manages payment processing.
-- productcatalogservice
+- [productcatalogservice](https://github.com/praks7v/Shopvory/tree/productcatalogservice)
   - Product catalog and listing service.
-- recommendationservice
+- [recommendationservice](https://github.com/praks7v/Shopvory/tree/recommendationservice)
   - Provides personalized product recommendations.
-- shippingservice
+- [shippingservice](https://github.com/praks7v/Shopvory/tree/shippingservice)
   - Handles shipping and delivery operations.
     
 ## Tech Stack
