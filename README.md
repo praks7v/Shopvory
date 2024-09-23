@@ -1,4 +1,4 @@
-# Shopvory - Ecommerce Microservice Application
+# Shopvory - E-commerce Microservices Application
 Shopvory is a microservice-based ecommerce platform. Each service is designed to handle a specific domain, making the architecture highly modular and scalable. The application is deployed on Google Cloud Platform (GCP) using Infrastructure as Code (IaC) tools such as Terraform and Ansible. Jenkins is used as the Continuous Integration/Continuous Deployment (CI/CD) pipeline tool, with GitHub as the version control system integrated through webhooks.
 
 ## Table of Contents
