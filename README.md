@@ -1,128 +1,172 @@
 # GCP Infrastructure Setup using Terraform, Ansible, and Jenkins
 
-This guide outlines the process of setting up Google Cloud Platform (GCP) infrastructure, configuring Terraform and Ansible, and deploying a CI/CD pipeline using Jenkins.
+This guide provides step-by-step instructions to set up Google Cloud Platform (GCP) infrastructure, configure Terraform and Ansible, and deploy a CI/CD pipeline using Jenkins. The steps are divided into phases for easy navigation.
 
+## Prerequisites
+Ensure that the following tools are installed:
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+- [Terraform](https://www.terraform.io/downloads)
+- [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
+- [Jenkins](https://www.jenkins.io/download/)
+  
 ---
-
-### Prerequisites
-Ensure the following tools are installed on your local or remote machine:
-- **Google Cloud SDK**: [Installation Guide](https://cloud.google.com/sdk/docs/install)
-- **Terraform**: [Installation Guide](https://www.terraform.io/downloads)
-- **Ansible**: [Installation Guide](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
-- **Jenkins**: [Installation Guide](https://www.jenkins.io/download/)
-
----
-
-## Step 1: Google Cloud Setup
+## Step 01: Google Cloud Setup
 
 ### Install Google Cloud SDK
-To install the Google Cloud SDK, use the following script:
-
+To install the Google Cloud SDK, run:
 ```bash
 chmod +x ./scripts/install_gcloud.sh
 ./scripts/install_gcloud.sh
 ```
-
 ### Authenticate with GCP
-To authenticate with GCP:
+Authenticate to GCP by running:
 
 ```bash
 gcloud auth application-default login
 ```
-
-> **Note**: For headless servers or CI environments, use:
+In certain environments (like headless servers), you can use the following command: (optional)
 
 ```bash
 gcloud auth application-default login --no-launch-browser
 ```
-
-### Create a New GCP Project
-
-1. **List your billing accounts**:
-   This will display all billing accounts available in your GCP account:
-
-    ```bash
-    gcloud beta billing accounts list
-    ```
-
-2. **Create a new project**:
-   Replace `<PROJECT_ID>` and `<PROJECT_NAME>` with your values:
-
-    ```bash
-    gcloud projects create <PROJECT_ID> --name="<PROJECT_NAME>"
-    # Example:
-    gcloud projects create shopvory-ecommerce --name="Shopvory"
-    ```
-
-3. **Link project to billing account**:
-   Replace `<ACCOUNT_ID>` with your billing account ID:
-
-    ```bash
-    gcloud beta billing projects link <PROJECT_ID> --billing-account=<ACCOUNT_ID>
-    ```
-
-4. **Set project as the default**:
-
-    ```bash
-    gcloud config set project <PROJECT_ID>
-    ```
-
-5. **Verify project configuration**:
-
-    ```bash
-    gcloud config get-value project
-    ```
-
-    Expected output:
-
-    ```bash
-    shopvory-ecommerce
-    ```
-
-### Enable Required APIs
-Run the following command to enable all necessary APIs:
+## Billing and Project Setup
+1. List your existing billing accounts:
+This will list all billing accounts you can use with GCP:
 
 ```bash
-gcloud services enable compute.googleapis.com \
-    container.googleapis.com \
-    storage.googleapis.com \
-    cloudresourcemanager.googleapis.com
+gcloud beta billing accounts list
+```
+2. Create a new project:
+Replace `<PROJECT_ID>` and `<PROJECT_NAME>` with your desired values. For example:
+
+```bash
+gcloud projects create <PROJECT_ID> --name="<PROJECT_NAME>"
+# Example:
+gcloud projects create shopvory-ecommerce --name="Shopvory"
+```
+3. Link the project to a billing account:
+Replace `<ACCOUNT_ID>` with your billing account ID:
+
+```bash
+gcloud beta billing projects link <PROJECT_ID> --billing-account=<ACCOUNT_ID>
+```
+4. Set the project as the default project:
+Configure your environment to use this project as the default:
+
+```bash
+gcloud config set project <PROJECT_ID>
+```
+5. Verify the project setup:
+To check that the project has been set correctly, run:
+
+```bash
+gcloud config get-value project
+# Expected output: shopvory-ecommerce
 ```
 
+### Enable Required APIs
+Enable the necessary Google Cloud services:
+
+```bash
+chmod +x scripts/gcp_service_apis.sh
+scripts/gcp_service_apis.sh
+```
+or 
+```bash
+gcloud services enable compute.googleapis.com
+gcloud services enable container.googleapis.com
+gcloud services enable storage.googleapis.com
+gcloud services enable cloudresourcemanager.googleapis.com
+```
+### Google Cloud Storage Setup
+Create a storage bucket:
+
+```bash
+gcloud storage buckets create gs://YOUR_BUCKET_NAME --location=REGION
+```
+(Optional) Enable versioning for the bucket:
+
+```bash
+gcloud storage buckets update gs://YOUR_BUCKET_NAME --versioning
+```
+### Service Account Creation
+
+To manage infrastructure with Terraform, you'll need to create a dedicated service account in GCP. You can either create the service account by running a script or manually through the Google Cloud Console.
+
+#### Option 1: Create a Service Account using a Script
+
+Follow these steps to create a Terraform service account via the provided script:
+
+1. Set your GCP project ID and service account name as environment variables:
+
+    ```bash
+    PROJECT_ID="shopvory-ecommerce"
+    SERVICE_ACCOUNT_NAME="tf-svc-account"
+    ```
+
+2. Ensure the script has executable permissions:
+
+    ```bash
+    chmod +x scripts/create_tf_svc_account.sh
+    ```
+
+3. Run the script to create the service account:
+
+    ```bash
+    ./scripts/create_tf_svc_account.sh
+    ```
+
+> **Note:** Before running the script, make sure to edit it with the correct roles, permissions, and project-specific details as necessary.
+
+#### Option 2: Manual Creation via the GCP Console
+
+Alternatively, you can manually create a service account through the Google Cloud Console or the `gcloud` CLI by following these steps:
+
+1. Create the service account:
+
+    ```bash
+    gcloud iam service-accounts create $SERVICE_ACCOUNT_NAME \
+      --display-name="Terraform Service Account"
+    ```
+
+2. Assign the required roles and permissions to the service account. For example, to grant the `roles/editor` role:
+
+    ```bash
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+      --member="serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com" \
+      --role="roles/editor"
+    ```
+
+3. (Optional) If you want to use more fine-grained permissions, assign specific roles as needed based on the scope of the infrastructure your Terraform configuration will manage.
+
+> For more details on available roles, refer to the [Google Cloud IAM Documentation](https://cloud.google.com/iam/docs/understanding-roles).
+
 ---
-
-## Step 2: Terraform & Ansible Setup
-
-### Install Terraform
-
-Use this script to install Terraform:
+## Step 02: Terraform & Ansible Setup
+Install Terraform
+Run the following script to install Terraform:
 
 ```bash
 chmod +x scripts/install_terraform.sh
 ./scripts/install_terraform.sh
 ```
-
-### SSH Key Generation for Ansible
-
-Generate SSH keys for Ansible connections:
+SSH Key Generation for Ansible
+Generate SSH keys for Ansible:
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/ansible_ed25519 -C ansible
 ```
 
-### Ansible Configuration
+Ansible Configuration
 
-Configure Ansible to use the generated SSH keys:
+Add the following configuration to your Ansible settings (e.g., in `ansible.cfg`):
 
-1. Open your `ansible.cfg` file and add the following configuration:
-
-    ```ini
-    [defaults]
-    inventory = inventory/ansible_inventory.json
-    remote_user = ansible
-    private_key_file = ~/.ssh/ansible_ed25519
-    ```
-
+```ini
+[defaults]
+inventory = inventory/ansible_inventory.json
+remote_user = ansible
+private_key_file = /home/dev/.ssh/ansible_ed25519
+```
 ### Step 1. Create Infrastructure with Terraform
 
 Before creating the infrastructure, review and edit the `backend.tf` and `terraform.tfvars` files:
@@ -145,26 +189,26 @@ Before creating the infrastructure, review and edit the `backend.tf` and `terraf
 
 - **Example `terraform.tfvars` for CI/CD infrastructure**:
     ```hcl
-    # VPC Networ
-   project_id   = "shopvory-ecommerce"
-   network_name = "cicd-vpc"
-   
-   # VM instances
-   instance_image = "projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240829"
-   
-   region = "asia-south1"
-   
-   ssh_user       = "ansible"
-   ssh_public_key = "/home/dev/.ssh/ansible_ed25519.pub"
-   
-   vm_instances = [
-     {
-       name         = "jenkins-vm"
-       machine_type = "e2-standard-4"
-       zone         = "asia-south1-a"
-       disk_size    = 20
-     }
-   ]
+        # VPC Networ
+        project_id   = "shopvory-ecommerce"
+        network_name = "cicd-vpc"
+        
+        # VM instances
+        instance_image = "projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240829"
+        
+        region = "asia-south1"
+        
+        ssh_user       = "ansible"
+        ssh_public_key = "/home/dev/.ssh/ansible_ed25519.pub"
+        
+        vm_instances = [
+            {
+            name         = "jenkins-vm"
+            machine_type = "e2-standard-4"
+            zone         = "asia-south1-a"
+            disk_size    = 20
+            }
+        ]
     ```
 
 To create the CI/CD infrastructure:
@@ -178,9 +222,11 @@ chmod +x create_cicd_infra.sh
 ### Step 2: Configure GKE Infrastructure with Terraform
 Create Terraform Configuration for GKE
 Backend Configuration:
-The backend is where Terraform stores its state. In this example, Terraform state is stored in a Google Cloud Storage bucket.
+The backend is where Terraform stores its state. 
 
-Create a `backend.tf` file for GKE infrastructure, using the following configuration:
+In this example, Terraform state is stored in a Google Cloud Storage bucket.
+
+- Create a `backend.tf` file for GKE infrastructure, using the following configuration:
 
 ```hcl
 Copy code
@@ -197,7 +243,7 @@ terraform {
   }
 }
 ```
-Variable Configuration:
+- Variable Configuration:
 Next, define the variables for your GKE environment in a `terraform.tfvars` file:
 ```
 project_id   = "shopvory-ecommerce"
@@ -212,40 +258,68 @@ cd scripts
 chmod +x create_gke_infra.sh
 ./create_gke_infra.sh
 ```
----
 
-## Step 3: Jenkins Setup
+---
+## Step 03: Jenkins Setup
+
+### Initial Jenkins Configuration
+1. Install Jenkins and configure default plugins.
+2. Login to Jenkins and configure it as needed.
 
 ### Install Jenkins Plugins
-
-Install the following plugins from the Jenkins dashboard:
+Install the following Jenkins plugins:
 - Docker
 - Docker Pipeline
+- Kubernetes
 - Kubernetes CLI
 - Multibranch Pipeline Webhook
 - SonarQube Scanner
+  
+### Configure Jenkins Tools
+- Docker
+- SonarQube
+  
+### Add Credentials in Jenkins
+- **Docker Hub credentials**: Store your Docker Hub credentials to allow Jenkins to push/pull images.
+- **Jenkins service account JSON key**: Add the GCP service account key to interact with GCP resources.
+- **GitHub credentials**: Store GitHub credentials for source control access.
+- **SonarQube credentials**: Add credentials to allow Jenkins to communicate with SonarQube.
+  
+### Steps to Create and Add Google Cloud Service Account Key to Jenkins:
+1. Create the Service Account Key
+Run the following command to generate a key for the Jenkins service account. This key will be used for authentication with GCP in the Jenkins pipeline.
 
-### Configure Jenkins Credentials
+```bash
+gcloud iam service-accounts keys create ~/jenkins-sa-key.json \
+--iam-account=jenkins-sa@<PROJECT_ID>.iam.gserviceaccount.com
+```
+Replace `<PROJECT_ID>` with your actual GCP project ID.
 
-1. **Docker Hub credentials**: Store your Docker Hub credentials for pushing and pulling images.
-2. **GCP service account JSON key**: Add the GCP service account key to interact with GCP.
-3. **GitHub credentials**: For source control access.
-4. **SonarQube credentials**: To communicate with SonarQube.
+2. Add the Key to Jenkins
 
-### Example Jenkinsfile for Pipeline
+- Open your Jenkins dashboard.
+- Go to Manage Jenkins > Manage Credentials > (global).
+- Click on Add Credentials.
+- Select Secret file as the kind.
+- Upload the `jenkins-sa-key.json` file generated in step 1.
+- Set the ID to something descriptive, like `jenkins-sa-key`.
+  
+3. Use the Credentials in Jenkins Pipelines
+In your Jenkinsfile, you can now reference the credentials using the ID you set when adding them to Jenkins.
 
-Here’s an example `Jenkinsfile` with environment variables for GCP authentication and Kubernetes deployment:
+**Example Jenkinsfile with Environment Variables**
+The following environment variables are used to configure the deployment pipeline:
 
 ```groovy
 pipeline {
     agent any
     environment {
-        PROJECT_ID = 'shopvory-ecommerce'
-        CLUSTER_NAME = 'prod-cluster'
-        CLUSTER_ZONE = 'asia-south1-b'
-        GOOGLE_APPLICATION_CREDENTIALS = credentials('jenkins-sa-key')
-        KUBE_CONFIG = 'kubeconfig'
-        USE_GKE_GCLOUD_AUTH_PLUGIN = 'True'
+        PROJECT_ID = 'shopvory-ecommerce'  // GCP Project ID
+        CLUSTER_NAME = 'prod-cluster'  // GKE Cluster name
+        CLUSTER_ZONE = 'asia-south1-b'  // GKE Cluster zone
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('jenkins-sa-key')  // Service account key file stored in Jenkins
+        KUBE_CONFIG = 'kubeconfig'  // Kubernetes config file
+        USE_GKE_GCLOUD_AUTH_PLUGIN = 'True'  // Required for GKE authentication via gcloud plugin
     }
     stages {
         stage('Build') {
@@ -260,51 +334,67 @@ pipeline {
     }
 }
 ```
+### Environment Variable Descriptions:
+- `PROJECT_ID`: The Google Cloud Project ID where your resources are hosted.
+- `CLUSTER_NAME`: The name of the Google Kubernetes Engine (GKE) cluster where the application will be deployed.
+- `CLUSTER_ZONE`: The zone where your GKE cluster is located. Example: `asia-south1-b`.
+- `GOOGLE_APPLICATION_CREDENTIALS`: The service account key stored in Jenkins for authenticating with GCP. This uses the credential ID added in Jenkins.
+- `KUBE_CONFIG`: The Kubernetes config file that `kubectl` uses to interact with the GKE cluster.
+- `USE_GKE_GCLOUD_AUTH_PLUGIN`: This ensures that `kubectl` uses the GKE gcloud authentication plugin when accessing the cluster.
+- 
+### Create a Pipeline in Jenkins
+1. In Jenkins, click New Item.
+2. Enter a name for the pipeline (e.g., MyProjectPipeline).
+3. Select Pipeline and click OK.
+4. In the Pipeline section:
+    - Under Definition, select "Pipeline script from SCM".
+    - Select Git as the SCM.
+    - Enter the repository URL.
+    - Add any required credentials for the repository.
+    - Set the Script Path to Jenkinsfile (if it’s located in the root of the repository).
+5. Save the pipeline configuration.
 
 ### Configure Webhooks
+To trigger the pipeline automatically on GitHub events:
 
-To trigger the Jenkins pipeline on GitHub events:
+1. In your GitHub repository, go to Settings > Webhooks > Add webhook.
 
-1. Go to **Settings** > **Webhooks** in your GitHub repository.
-2. Set the Payload URL to:
+2. Set the Payload URL to your Jenkins URL, followed by `/github-webhook/`:
 
-    ```text
-    http://<jenkins-url>/github-webhook/
-    ```
+```text
+http://your-jenkins-url/github-webhook/
+```
+3. Set the Content type to `application/json`.
 
-3. Select **application/json** for Content type.
-4. Choose the events to trigger the pipeline (e.g., "Push events").
-5. Add the webhook.
+4. Select the events to trigger the webhook (e.g., "Just the push event").
 
----
-
-## Step 4: Cleanup Infrastructure
-
-When you're done, clean up the infrastructure:
-
-1. **CI/CD and GKE**:
-
-    ```bash
-    cd scripts
-    chmod +x destroy_cicd_infra.sh destroy_gke_infra.sh
-    ./destroy_cicd_infra.sh
-    ./destroy_gke_infra.sh
-    ```
-
-2. **Delete the GCP Storage Bucket**:
-
-    ```bash
-    gcloud storage rm -r gs://<BUCKET_NAME>
-    ```
-
-3. **Delete the GCP project**:
-
-    ```bash
-    gcloud projects delete <PROJECT_ID>
-    ```
+5. Click Add webhook.
 
 ---
+## Step 04: Destroying the Infrastructure
+Cleanup CI/CD and GKE Infrastructure
+Run the following scripts to destroy the infrastructure:
 
+```bash
+cd scripts
+chmod +x destroy_cicd_infra.sh
+ ./destroy_cicd_infra.sh
+chmod +x destroy_gke_infra.sh
+./destroy_gke_infra.sh
+```
+Delete the GCP Storage Bucket
+Delete the Terraform state bucket and its contents:
+
+```bash
+gcloud storage rm -r gs://<BUCKET_NAME>
+gcloud storage buckets delete gs://<BUCKET_NAME>
+```
+Delete the GCP Project
+Finally, delete the GCP project:
+
+```bash
+gcloud projects delete <PROJECT_ID>
+```
+---
 ## Conclusion
-
-By following this guide, you can quickly set up, deploy, and manage GCP infrastructure, CI/CD pipelines using Jenkins, and orchestrate resources with Terraform and Ansible. When no longer needed, remember to clean up the environment to avoid unnecessary costs.
+This guide helps you to quickly set up GCP infrastructure, CI/CD pipelines using Jenkins, and manage resources using Terraform and Ansible. Follow the cleanup steps to tear down the environment when it is no longer needed.
