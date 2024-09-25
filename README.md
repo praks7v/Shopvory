@@ -197,10 +197,11 @@ chmod +x create_gke_infra.sh
 ### Install Jenkins Plugins
 Install the following Jenkins plugins:
 - Docker
+- Docker Pipeline
 - Kubernetes
 - Kubernetes CLI
 - Multibranch Pipeline Webhook
-- SonarQube
+- SonarQube Scanner
   
 ### Configure Jenkins Tools
 - Docker
