@@ -123,7 +123,7 @@ Configure Ansible to use the generated SSH keys:
     private_key_file = ~/.ssh/ansible_ed25519
     ```
 
-### Create Infrastructure with Terraform
+### Step 1. Create Infrastructure with Terraform
 
 Before creating the infrastructure, review and edit the `backend.tf` and `terraform.tfvars` files:
 
@@ -143,16 +143,31 @@ Before creating the infrastructure, review and edit the `backend.tf` and `terraf
     }
     ```
 
-- **Example `terraform.tfvars` for CI/CD**:
+- **Example `terraform.tfvars` for CI/CD infrastructure**:
     ```hcl
-    project_id   = "shopvory-ecommerce"
-    network_name = "cicd-vpc"
-    region       = "asia-south1"
-    ssh_user     = "ansible"
-    ssh_public_key = "~/.ssh/ansible_ed25519.pub"
+    # VPC Networ
+   project_id   = "shopvory-ecommerce"
+   network_name = "cicd-vpc"
+   
+   # VM instances
+   instance_image = "projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240829"
+   
+   region = "asia-south1"
+   
+   ssh_user       = "ansible"
+   ssh_public_key = "/home/dev/.ssh/ansible_ed25519.pub"
+   
+   vm_instances = [
+     {
+       name         = "jenkins-vm"
+       machine_type = "e2-standard-4"
+       zone         = "asia-south1-a"
+       disk_size    = 20
+     }
+   ]
     ```
 
-To create the infrastructure:
+To create the CI/CD infrastructure:
 
 ```bash
 cd scripts
@@ -160,6 +175,43 @@ chmod +x create_cicd_infra.sh
 ./create_cicd_infra.sh
 ```
 
+### Step 2: Configure GKE Infrastructure with Terraform
+Create Terraform Configuration for GKE
+Backend Configuration:
+The backend is where Terraform stores its state. In this example, Terraform state is stored in a Google Cloud Storage bucket.
+
+Create a `backend.tf` file for GKE infrastructure, using the following configuration:
+
+```hcl
+Copy code
+terraform {
+  backend "gcs" {
+    bucket = "tf-state-file-cicd"  # Replace with your GCS bucket
+    prefix = "terraform/state/gke"
+  }
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 6.0"
+    }
+  }
+}
+```
+Variable Configuration:
+Next, define the variables for your GKE environment in a `terraform.tfvars` file:
+```
+project_id   = "shopvory-ecommerce"
+network_name = "gke-prod-vpc"
+region       = "asia-south1"
+zone         = "asia-south1-b"
+```
+To create the GKE infrastructure:
+
+```bash
+cd scripts
+chmod +x create_gke_infra.sh
+./create_gke_infra.sh
+```
 ---
 
 ## Step 3: Jenkins Setup
