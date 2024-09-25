@@ -60,7 +60,7 @@ We use **Terraform** to provision the following GCP resources:
 - Virtual Machines (VMs) for hosting services
 - Google Kubernetes Engine (GKE) for container orchestration
 - Service Accounts and IAM permissions for secure access
-- 
+  
 To see the full infrastructure setup instructions, including the Terraform configurations, Ansible Configurations, and CI/CD pipeline, please refer to the [detailed GCP infrastructure guide](https://github.com/praks7v/Shopvory/tree/gcp-infra) in the `gcp-infra` branch.
 ---
 ## Contributing
