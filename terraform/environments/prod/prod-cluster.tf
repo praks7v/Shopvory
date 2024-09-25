@@ -78,10 +78,10 @@ resource "google_container_node_pool" "prod" {
   }
 }
 
-resource "google_service_account" "prod_sa" {
-  account_id = "prod-sa"
-  project    = var.project_id
-}
+# resource "google_service_account" "prod_sa" {
+#   account_id = "prod-sa"
+#   project    = var.project_id
+# }
 
 # resource "google_service_account_iam_member" "prod_sa" {
 #   service_account_id = google_service_account.prod_sa.id
