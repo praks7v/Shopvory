@@ -272,7 +272,7 @@ Install the following Jenkins plugins:
 - Docker Pipeline
 - Kubernetes
 - Kubernetes CLI
-- Multibranch Pipeline Webhook
+- Multibranch Scan Webhook Trigger
 - SonarQube Scanner
   
 ### Configure Jenkins Tools
@@ -362,7 +362,7 @@ To trigger the pipeline automatically on GitHub events:
 2. Set the Payload URL to your Jenkins URL, followed by `/github-webhook/`:
 
 ```text
-http://your-jenkins-url/github-webhook/
+http://<JENKINS_URL>/multibranch-webhook-trigger/invoke?token=<WEBHOOK_TOKEN>
 ```
 3. Set the Content type to `application/json`.
 
