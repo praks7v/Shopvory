@@ -1,6 +1,6 @@
 # VPC Network
 project_id   = "shopvory-ecommerce"
-network_name = "cicd-vpc"
+network_name = "cicd-vpc-test"
 
 # VM instances
 instance_image = "projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240829"
