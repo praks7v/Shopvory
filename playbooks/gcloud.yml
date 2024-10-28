@@ -1,36 +1,44 @@
 ---
-- name: Install gcloud and kubectl
-  hosts: jenkins-vm
+- name: Install Google Cloud SDK and GKE gcloud auth plugin
+  hosts: all
   become: true
   tasks:
-    - name: Ensure snapd is installed
+    - name: Update apt package index
       apt:
-        name: snapd
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - curl
         state: present
-      tags: snap
 
-    - name: Ensure the snapd service is started and enabled
-      systemd:
-        name: snapd
-        state: started
-        enabled: yes
-      tags: snap
+    - name: Download Google Cloud GPG key and save it to /usr/share/keyrings
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+        keyring: /usr/share/keyrings/cloud.google.gpg
 
-    - name: Install Google Cloud SDK using snap with classic confinement
-      snap:
+    - name: Add Google Cloud SDK repository
+      lineinfile:
+        path: /etc/apt/sources.list.d/google-cloud-sdk.list
+        line: "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main"
+        create: yes
+        state: present
+
+    - name: Update apt package index again
+      apt:
+        update_cache: yes
+
+    - name: Install Google Cloud CLI
+      apt:
         name: google-cloud-cli
         state: present
-        classic: true
-      tags: gcloud
 
-    - name: Ensure snap packages are up to date (Optional)
-      command: snap refresh
-      tags: snap
-
-    - name: Install gke-gcloud-auth-plugin
-      shell: gcloud components install gke-gcloud-auth-plugin --quiet
-      tags: gcloud
-
-    - name: Install kubectl using gcloud
-      shell: gcloud components install kubectl --quiet
-      tags: kubectl
+    - name: Install GKE gcloud auth plugin
+      apt:
+        name: google-cloud-sdk-gke-gcloud-auth-plugin
+        state: present

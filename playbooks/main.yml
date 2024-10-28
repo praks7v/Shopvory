@@ -13,7 +13,7 @@
         state: latest
 
 - name: Install Jenkins and dependencies
-  hosts: jenkins-vm
+  hosts: all
   gather_facts: yes
   become: yes
 
@@ -46,4 +46,4 @@
         state: restarted
 
 - import_playbook: gcloud.yml
-# - import_playbook: kubectl.yml
+- import_playbook: kubectl.yml

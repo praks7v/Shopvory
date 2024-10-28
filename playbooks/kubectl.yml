@@ -1,6 +1,6 @@
 ---
 - name: Install kubectl on Linux using a custom APT repository
-  hosts: jenkins-vm
+  hosts: all
   become: yes
   tasks:
     - name: Ensure apt dependencies are installed
